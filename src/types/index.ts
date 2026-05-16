@@ -72,6 +72,7 @@ export interface CityItem {
   name: string;
   emoji: string;
   category: 'nature' | 'energy' | 'transport' | 'building';
-  ecoScore: number;
+  ecoScore: number; // positive = good, negative = bad
   description: string;
+  isBad?: boolean;
 }

@@ -78,6 +78,15 @@ export const CITY_ITEMS: CityItem[] = [
   { id: 'ci12', name: 'Electric Car', emoji: '🚗', category: 'transport', ecoScore: 9, description: 'Runs on electricity with no exhaust fumes — cleaner streets!' },
 ];
 
+export const BAD_CITY_ITEMS: CityItem[] = [
+  { id: 'bad1', name: 'Coal Plant', emoji: '🏭', category: 'energy', ecoScore: -15, isBad: true, description: 'Burns coal and releases toxic smoke and CO2 into the air!' },
+  { id: 'bad2', name: 'Gas Car Lot', emoji: '🚙', category: 'transport', ecoScore: -8, isBad: true, description: 'Gas cars release harmful exhaust fumes that pollute the air!' },
+  { id: 'bad3', name: 'Landfill', emoji: '🗑️', category: 'building', ecoScore: -12, isBad: true, description: 'Landfills produce methane gas and leak toxins into the soil!' },
+  { id: 'bad4', name: 'Plastic Factory', emoji: '⚙️', category: 'building', ecoScore: -10, isBad: true, description: 'Produces single-use plastic waste that pollutes oceans!' },
+  { id: 'bad5', name: 'Concrete Lot', emoji: '🅿️', category: 'transport', ecoScore: -6, isBad: true, description: 'Covers green land with concrete and heats up the city!' },
+  { id: 'bad6', name: 'Oil Drum', emoji: '🛢️', category: 'energy', ecoScore: -11, isBad: true, description: 'Storing oil risks dangerous spills that destroy nature!' },
+];
+
 export const BIN_COLORS: Record<string, { bg: string; border: string; label: string; emoji: string }> = {
   plastic: { bg: 'bg-red-100', border: 'border-red-400', label: 'Plastic', emoji: '🔴' },
   paper:   { bg: 'bg-blue-100', border: 'border-blue-400', label: 'Paper', emoji: '🔵' },
