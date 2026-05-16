@@ -3,11 +3,19 @@
 > An educational gamified web platform for children (ages 9–11) to learn English vocabulary through interactive sustainability games aligned with the UN Sustainable Development Goals (SDGs).
 
 ![Eco English Banner](https://img.shields.io/badge/Eco%20English-Educational%20Platform-22c55e?style=for-the-badge&logo=leaf)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-eco--english.vercel.app-22c55e?style=for-the-badge&logo=vercel)](https://eco-english.vercel.app/)
+
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=flat&logo=typescript)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4-06B6D4?style=flat&logo=tailwindcss)
 ![Framer Motion](https://img.shields.io/badge/Framer%20Motion-12-FF0055?style=flat)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
+---
+
+## 🌐 Live Demo
+
+**[https://eco-english.vercel.app/](https://eco-english.vercel.app/)**
 
 ---
 
