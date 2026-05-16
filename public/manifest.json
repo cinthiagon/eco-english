@@ -1,0 +1,12 @@
+{
+  "name": "Eco English",
+  "short_name": "EcoEnglish",
+  "description": "Learn English while saving the planet!",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0fdf4",
+  "theme_color": "#22c55e",
+  "icons": [
+    { "src": "/leaf.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
