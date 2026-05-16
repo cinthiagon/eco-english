@@ -7,12 +7,12 @@ import { getLevelInfo } from '../services/progress';
 import { ProgressBar, Mascot } from '../components/GameUI';
 
 const FACTS = [
-  "🌍 Every year, 8 million tons of plastic enter our oceans!",
-  "♻️ Recycling one aluminum can saves enough energy to run a TV for 3 hours!",
-  "💧 A dripping tap wastes 11,000 liters of water per year!",
-  "🌳 One tree absorbs about 22 kg of CO2 per year!",
-  "☀️ The sun gives us more energy in one hour than the world uses in a year!",
-  "🚲 Riding a bike instead of a car saves 150g of CO2 per kilometer!",
+  "🌍 Every year, about 8 million tons of plastic waste end up in our oceans!",
+  "♻️ Recycling one aluminum can saves enough energy to power a TV for 3 hours!",
+  "💧 A dripping tap can waste up to 11,000 liters of water in a single year!",
+  "🌳 A single tree can absorb about 22 kg of CO2 from the air every year!",
+  "☀️ The sun delivers more energy to Earth in one hour than the whole world uses in a year!",
+  "🚲 Cycling instead of driving just one kilometer saves about 150g of CO2!",
 ];
 
 export default function HomePage() {
