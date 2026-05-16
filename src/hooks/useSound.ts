@@ -1,99 +1,130 @@
 // Projeto desenvolvido por Cinthia Gonçalez — Universidade Positivo
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 export type SoundEffect = 'correct' | 'wrong' | 'win' | 'click' | 'coin' | 'drop';
 
-const frequencies: Record<SoundEffect, number[][]> = {
+// ─── WAV Generator ────────────────────────────────────────────────────────────
+const SAMPLE_RATE = 22050;
+
+function buildWav(notes: [number, number][]): string {
+  // Calculate total samples needed
+  let totalSamples = 0;
+  notes.forEach(([, dur]) => { totalSamples += Math.ceil(SAMPLE_RATE * dur); });
+
+  const buffer = new ArrayBuffer(44 + totalSamples * 2);
+  const view   = new DataView(buffer);
+
+  // WAV header
+  const str = (off: number, s: string) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); };
+  str(0, 'RIFF');
+  view.setUint32(4,  36 + totalSamples * 2, true);
+  str(8, 'WAVE');
+  str(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20,  1, true); // PCM
+  view.setUint16(22,  1, true); // mono
+  view.setUint32(24, SAMPLE_RATE, true);
+  view.setUint32(28, SAMPLE_RATE * 2, true);
+  view.setUint16(32,  2, true);
+  view.setUint16(34, 16, true);
+  str(36, 'data');
+  view.setUint32(40, totalSamples * 2, true);
+
+  // PCM samples — each note in sequence with a small fade
+  let offset = 44;
+  notes.forEach(([freq, dur]) => {
+    const n = Math.ceil(SAMPLE_RATE * dur);
+    for (let i = 0; i < n; i++) {
+      const t        = i / SAMPLE_RATE;
+      const attack   = Math.min(1, t / 0.008);
+      const decay    = Math.max(0, 1 - t / dur);
+      const envelope = attack * decay;
+      const sample   = Math.sin(2 * Math.PI * freq * t) * envelope * 0.45 * 32767;
+      view.setInt16(offset, Math.round(sample), true);
+      offset += 2;
+    }
+  });
+
+  // Convert to base64 data URI
+  const bytes  = new Uint8Array(buffer);
+  let binary   = '';
+  // Process in chunks to avoid stack overflow on large buffers
+  const CHUNK  = 8192;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return 'data:audio/wav;base64,' + btoa(binary);
+}
+
+// ─── Sound definitions ────────────────────────────────────────────────────────
+const SOUND_NOTES: Record<SoundEffect, [number, number][]> = {
   correct: [[523, 0.1], [659, 0.1], [784, 0.15]],
-  wrong:   [[300, 0.1], [250, 0.2]],
-  win:     [[523, 0.1], [659, 0.1], [784, 0.1], [1047, 0.3]],
-  click:   [[600, 0.05]],
-  coin:    [[880, 0.05], [1108, 0.08]],
-  drop:    [[400, 0.05], [500, 0.08]],
+  wrong:   [[300, 0.12], [220, 0.18]],
+  win:     [[523, 0.09], [659, 0.09], [784, 0.09], [1047, 0.28]],
+  click:   [[700, 0.06]],
+  coin:    [[880, 0.06], [1108, 0.1]],
+  drop:    [[420, 0.06], [520, 0.09]],
 };
 
-// Module-level state — shared across all hook instances
-let ctx: AudioContext | null = null;
-let audioUnlocked = false;
-const unlockCallbacks: (() => void)[] = [];
+// ─── Module-level state ───────────────────────────────────────────────────────
+type AudioPool = Record<SoundEffect, HTMLAudioElement>;
+
+let pool: AudioPool | null = null;
+let unlocked = false;
+const pendingCallbacks: (() => void)[] = [];
+
+function getPool(): AudioPool {
+  if (!pool) {
+    const entries = Object.entries(SOUND_NOTES).map(([key, notes]) => {
+      const uri = buildWav(notes);
+      const el  = new Audio(uri);
+      el.preload = 'none';  // don't auto-load; we'll trigger on unlock
+      return [key, el];
+    });
+    pool = Object.fromEntries(entries) as AudioPool;
+  }
+  return pool;
+}
 
 /**
- * iOS Safari rule: AudioContext MUST be both created AND resumed
- * synchronously inside a direct user-gesture event handler.
- * Calling this from a touchend/click handler satisfies that requirement.
+ * Must be called synchronously inside a user-gesture handler.
+ * Plays a silent frame on every Audio element to satisfy iOS autoplay policy.
  */
-export function unlockAudioContext(): void {
-  if (audioUnlocked) return;
-  try {
-    const AC =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-
-    // Create the context INSIDE the gesture (critical for iOS)
-    if (!ctx) ctx = new AC();
-
-    // Resume synchronously within the gesture handler
-    ctx.resume();
-
-    // Play a zero-duration silent buffer — required to fully unlock iOS Safari
-    const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.connect(ctx.destination);
-    src.start(0);
-
-    audioUnlocked = true;
-    // Notify any listeners waiting for unlock
-    unlockCallbacks.forEach(cb => cb());
-    unlockCallbacks.length = 0;
-  } catch { /* ignore */ }
+export function unlockAudio(): void {
+  if (unlocked) return;
+  const p = getPool();
+  let pending = Object.keys(p).length;
+  const done = () => { if (--pending === 0) { unlocked = true; pendingCallbacks.forEach(cb => cb()); pendingCallbacks.length = 0; } };
+  (Object.values(p) as HTMLAudioElement[]).forEach(el => {
+    const pr = el.play();
+    if (pr) {
+      pr.then(() => { el.pause(); el.currentTime = 0; done(); }).catch(done);
+    } else {
+      el.pause(); el.currentTime = 0; done();
+    }
+  });
 }
 
-function playNotes(effect: SoundEffect): void {
-  if (!ctx) return;
-  try {
-    const notes = frequencies[effect];
-    let time = ctx.currentTime;
-    notes.forEach(([freq, dur]) => {
-      const osc  = ctx!.createOscillator();
-      const gain = ctx!.createGain();
-      osc.connect(gain);
-      gain.connect(ctx!.destination);
-      osc.frequency.value = freq;
-      osc.type = 'sine';
-      gain.gain.setValueAtTime(0.25, time);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
-      osc.start(time);
-      osc.stop(time + dur);
-      time += dur * 0.8;
-    });
-  } catch { /* ignore */ }
-}
-
+// ─── Hook ─────────────────────────────────────────────────────────────────────
 export function useSound() {
-  const [enabled, setEnabled] = useState(() => localStorage.getItem('eco_sound') !== 'off');
-  const [unlocked, setUnlocked] = useState(audioUnlocked);
-  const enabledRef = useRef(enabled);
-  enabledRef.current = enabled;
+  const [enabled, setEnabled]   = useState(() => localStorage.getItem('eco_sound') !== 'off');
+  const [isUnlocked, setUnlocked] = useState(unlocked);
 
   useEffect(() => {
-    if (audioUnlocked) { setUnlocked(true); return; }
+    if (unlocked) { setUnlocked(true); return; }
     const cb = () => setUnlocked(true);
-    unlockCallbacks.push(cb);
-    return () => {
-      const i = unlockCallbacks.indexOf(cb);
-      if (i >= 0) unlockCallbacks.splice(i, 1);
-    };
+    pendingCallbacks.push(cb);
+    return () => { const i = pendingCallbacks.indexOf(cb); if (i >= 0) pendingCallbacks.splice(i, 1); };
   }, []);
 
   const play = useCallback((effect: SoundEffect) => {
-    if (!enabledRef.current || !audioUnlocked || !ctx) return;
-    if (ctx.state === 'suspended') {
-      ctx.resume().then(() => playNotes(effect));
-    } else {
-      playNotes(effect);
-    }
-  }, []);
+    if (!enabled || !unlocked) return;
+    try {
+      const el = getPool()[effect];
+      el.currentTime = 0;
+      el.play().catch(() => {});
+    } catch { /* ignore */ }
+  }, [enabled]);
 
   const toggle = useCallback(() => {
     setEnabled(prev => {
@@ -103,5 +134,5 @@ export function useSound() {
     });
   }, []);
 
-  return { play, enabled, toggle, unlocked };
+  return { play, enabled, toggle, isUnlocked };
 }
