@@ -228,11 +228,11 @@ This project specifically addresses:
 
 ---
 
-## 👩‍💻 Autora
+## 👩‍💻 Author
 
 **Cinthia Gonçalez**
 
-Projeto desenvolvido como requisito parcial de atividade de extensão do curso de **Análise e Desenvolvimento de Sistemas** da **Universidade Positivo**.
+Project developed as a partial requirement for an extension activity in the **Systems Analysis and Development** program at **Universidade Positivo**.
 
 ---
 
