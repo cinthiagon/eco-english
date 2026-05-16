@@ -107,13 +107,27 @@ export function unlockAudio(): void {
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 export function useSound() {
-  const [enabled, setEnabled]   = useState(() => localStorage.getItem('eco_sound') !== 'off');
+  const [enabled, setEnabled]     = useState(() => localStorage.getItem('eco_sound') !== 'off');
   const [isUnlocked, setUnlocked] = useState(unlocked);
 
   useEffect(() => {
     if (unlocked) { setUnlocked(true); return; }
+
     const cb = () => setUnlocked(true);
     pendingCallbacks.push(cb);
+
+    // On desktop (non-touch), auto-unlock on first click or keypress — no banner needed
+    const isTouch = navigator.maxTouchPoints > 0;
+    if (!isTouch) {
+      const autoUnlock = () => {
+        unlockAudio();
+        window.removeEventListener('click',   autoUnlock);
+        window.removeEventListener('keydown', autoUnlock);
+      };
+      window.addEventListener('click',   autoUnlock, { once: true });
+      window.addEventListener('keydown', autoUnlock, { once: true });
+    }
+
     return () => { const i = pendingCallbacks.indexOf(cb); if (i >= 0) pendingCallbacks.splice(i, 1); };
   }, []);
 
