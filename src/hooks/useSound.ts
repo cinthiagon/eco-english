@@ -1,7 +1,7 @@
 // Projeto desenvolvido por Cinthia Gonçalez — Universidade Positivo
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
-type SoundEffect = 'correct' | 'wrong' | 'win' | 'click' | 'coin' | 'drop';
+export type SoundEffect = 'correct' | 'wrong' | 'win' | 'click' | 'coin' | 'drop';
 
 const frequencies: Record<SoundEffect, number[][]> = {
   correct: [[523, 0.1], [659, 0.1], [784, 0.15]],
@@ -12,84 +12,88 @@ const frequencies: Record<SoundEffect, number[][]> = {
   drop:    [[400, 0.05], [500, 0.08]],
 };
 
-// Singleton AudioContext shared across all hook instances
-let sharedCtx: AudioContext | null = null;
+// Module-level state — shared across all hook instances
+let ctx: AudioContext | null = null;
+let audioUnlocked = false;
+const unlockCallbacks: (() => void)[] = [];
 
-function getAudioContext(): AudioContext {
-  if (!sharedCtx) {
-    sharedCtx = new (
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-    )();
-  }
-  return sharedCtx;
-}
-
-// Resume the AudioContext on the first user interaction.
-// Mobile browsers suspend it by default and require a gesture to unlock it.
-function unlockAudio() {
+/**
+ * iOS Safari rule: AudioContext MUST be both created AND resumed
+ * synchronously inside a direct user-gesture event handler.
+ * Calling this from a touchend/click handler satisfies that requirement.
+ */
+export function unlockAudioContext(): void {
+  if (audioUnlocked) return;
   try {
-    const ctx = getAudioContext();
-    if (ctx.state === 'suspended') {
-      ctx.resume();
-    }
-    // Play a silent buffer to fully unlock audio on iOS Safari
-    const buf = ctx.createBuffer(1, 1, 22050);
+    const AC =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+
+    // Create the context INSIDE the gesture (critical for iOS)
+    if (!ctx) ctx = new AC();
+
+    // Resume synchronously within the gesture handler
+    ctx.resume();
+
+    // Play a zero-duration silent buffer — required to fully unlock iOS Safari
+    const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
     const src = ctx.createBufferSource();
     src.buffer = buf;
     src.connect(ctx.destination);
     src.start(0);
+
+    audioUnlocked = true;
+    // Notify any listeners waiting for unlock
+    unlockCallbacks.forEach(cb => cb());
+    unlockCallbacks.length = 0;
+  } catch { /* ignore */ }
+}
+
+function playNotes(effect: SoundEffect): void {
+  if (!ctx) return;
+  try {
+    const notes = frequencies[effect];
+    let time = ctx.currentTime;
+    notes.forEach(([freq, dur]) => {
+      const osc  = ctx!.createOscillator();
+      const gain = ctx!.createGain();
+      osc.connect(gain);
+      gain.connect(ctx!.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.25, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+      osc.start(time);
+      osc.stop(time + dur);
+      time += dur * 0.8;
+    });
   } catch { /* ignore */ }
 }
 
 export function useSound() {
-  const [enabled, setEnabled] = useState(() => {
-    return localStorage.getItem('eco_sound') !== 'off';
-  });
-  const unlockedRef = useRef(false);
+  const [enabled, setEnabled] = useState(() => localStorage.getItem('eco_sound') !== 'off');
+  const [unlocked, setUnlocked] = useState(audioUnlocked);
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
 
-  // Attach a one-time listener to the first touch/click anywhere on the page.
-  // This is the only reliable way to unlock audio on iOS and Android.
   useEffect(() => {
-    if (unlockedRef.current) return;
-
-    const unlock = () => {
-      if (unlockedRef.current) return;
-      unlockedRef.current = true;
-      unlockAudio();
-      window.removeEventListener('touchstart', unlock, true);
-      window.removeEventListener('touchend',   unlock, true);
-      window.removeEventListener('pointerdown', unlock, true);
-      window.removeEventListener('click',       unlock, true);
-    };
-
-    window.addEventListener('touchstart',  unlock, { capture: true, passive: true });
-    window.addEventListener('touchend',    unlock, { capture: true, passive: true });
-    window.addEventListener('pointerdown', unlock, { capture: true, passive: true });
-    window.addEventListener('click',       unlock, { capture: true, passive: true });
-
+    if (audioUnlocked) { setUnlocked(true); return; }
+    const cb = () => setUnlocked(true);
+    unlockCallbacks.push(cb);
     return () => {
-      window.removeEventListener('touchstart',  unlock, true);
-      window.removeEventListener('touchend',    unlock, true);
-      window.removeEventListener('pointerdown', unlock, true);
-      window.removeEventListener('click',       unlock, true);
+      const i = unlockCallbacks.indexOf(cb);
+      if (i >= 0) unlockCallbacks.splice(i, 1);
     };
   }, []);
 
   const play = useCallback((effect: SoundEffect) => {
-    if (!enabled) return;
-    try {
-      const ctx = getAudioContext();
-
-      // Resume if suspended (Android Chrome sometimes suspends again)
-      if (ctx.state === 'suspended') {
-        ctx.resume().then(() => playNotes(ctx, effect));
-        return;
-      }
-
-      playNotes(ctx, effect);
-    } catch { /* ignore audio errors */ }
-  }, [enabled]);
+    if (!enabledRef.current || !audioUnlocked || !ctx) return;
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(() => playNotes(effect));
+    } else {
+      playNotes(effect);
+    }
+  }, []);
 
   const toggle = useCallback(() => {
     setEnabled(prev => {
@@ -99,23 +103,5 @@ export function useSound() {
     });
   }, []);
 
-  return { play, enabled, toggle };
-}
-
-function playNotes(ctx: AudioContext, effect: SoundEffect) {
-  const notes = frequencies[effect];
-  let time = ctx.currentTime;
-  notes.forEach(([freq, dur]) => {
-    const osc  = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = freq;
-    osc.type = 'sine';
-    gain.gain.setValueAtTime(0.3, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
-    osc.start(time);
-    osc.stop(time + dur);
-    time += dur * 0.8;
-  });
+  return { play, enabled, toggle, unlocked };
 }

@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import SoundUnlockBanner from './components/SoundUnlockBanner';
 import HomePage from './pages/HomePage';
 import GamesPage from './pages/GamesPage';
 import AchievementsPage from './pages/AchievementsPage';
@@ -31,6 +32,7 @@ function App() {
           </Routes>
         </main>
         <Footer />
+        <SoundUnlockBanner />
       </div>
     </BrowserRouter>
   );
