@@ -1,4 +1,4 @@
-// Projeto desenvolvido por Cinthia Gonçalez — Universidade Positivo
+﻿// Projeto desenvolvido por Cinthia Gonçalez — Cruzeiro do Sul Virtual / Universidade Positivo
 import type { WasteItem, ShoppingItem, QuizQuestion, WordCard, CityItem } from '../types';
 
 export const WASTE_ITEMS: WasteItem[] = [

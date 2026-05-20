@@ -1,4 +1,4 @@
-// Projeto desenvolvido por Cinthia Gonçalez — Universidade Positivo
+﻿// Projeto desenvolvido por Cinthia Gonçalez — Cruzeiro do Sul Virtual / Universidade Positivo
 import { useState, useCallback, useEffect } from 'react';
 
 export type SoundEffect = 'correct' | 'wrong' | 'win' | 'click' | 'coin' | 'drop';

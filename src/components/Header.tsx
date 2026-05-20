@@ -1,4 +1,4 @@
-// Projeto desenvolvido por Cinthia Gonçalez — Universidade Positivo
+﻿// Projeto desenvolvido por Cinthia Gonçalez — Cruzeiro do Sul Virtual / Universidade Positivo
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Home, Gamepad2, Trophy, User, Volume2, VolumeX } from 'lucide-react';

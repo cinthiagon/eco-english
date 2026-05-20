@@ -1,4 +1,4 @@
-// Projeto desenvolvido por Cinthia Gonçalez — Universidade Positivo
+﻿// Projeto desenvolvido por Cinthia Gonçalez — Cruzeiro do Sul Virtual / Universidade Positivo
 import { useState, useEffect, useCallback } from 'react';
 import type { PlayerProgress } from '../types';
 import { loadProgress, saveProgress, recordGameCompletion, unlockAchievement, setPlayerName } from '../services/progress';

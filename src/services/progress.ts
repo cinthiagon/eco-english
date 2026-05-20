@@ -1,4 +1,4 @@
-// Projeto desenvolvido por Cinthia Gonçalez — Universidade Positivo
+﻿// Projeto desenvolvido por Cinthia Gonçalez — Cruzeiro do Sul Virtual / Universidade Positivo
 import type { PlayerProgress, GameScore } from '../types';
 
 const STORAGE_KEY = 'eco_english_progress';

@@ -1,4 +1,4 @@
-# 🌱 Eco English — Learn English & Save the Planet!
+﻿# 🌱 Eco English — Learn English & Save the Planet!
 
 > An educational gamified web platform for children (ages 9–11) to learn English vocabulary through interactive sustainability games aligned with the UN Sustainable Development Goals (SDGs).
 
@@ -240,7 +240,7 @@ This project specifically addresses:
 
 **Cinthia Gonçalez**
 
-Project developed as a partial requirement for an extension activity in the **Systems Analysis and Development** program at **Universidade Positivo**.
+Project developed as a partial requirement for an extension activity in the **Systems Analysis and Development** program at **Cruzeiro do Sul Virtual / Universidade Positivo**.
 
 ---
 

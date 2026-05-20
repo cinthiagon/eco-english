@@ -1,4 +1,4 @@
-// Projeto desenvolvido por Cinthia Gonçalez — Universidade Positivo
+﻿// Projeto desenvolvido por Cinthia Gonçalez — Cruzeiro do Sul Virtual / Universidade Positivo
 import { Leaf, GitFork } from 'lucide-react';
 
 export default function Footer() {
@@ -14,7 +14,7 @@ export default function Footer() {
         <p className="text-sm text-green-200 leading-relaxed max-w-xl mx-auto">
           © {year} <strong>Cinthia Gonçalez</strong> — project developed as a partial requirement
           for an extension activity in the <em>Systems Analysis and Development</em> program at{' '}
-          <strong>Universidade Positivo</strong>.
+          <strong>Cruzeiro do Sul Virtual / Universidade Positivo</strong>.
         </p>
         <a
           href="https://github.com/cinthiagon/eco-english"
